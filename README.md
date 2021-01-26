@@ -1,453 +1,229 @@
-# Telegraf [![Circle CI](https://circleci.com/gh/influxdata/telegraf.svg?style=svg)](https://circleci.com/gh/influxdata/telegraf) [![Docker pulls](https://img.shields.io/docker/pulls/library/telegraf.svg)](https://hub.docker.com/_/telegraf/)
-[![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://www.influxdata.com/slack)
+# RabbitMQ Input Plugin
 
-Telegraf is an agent for collecting, processing, aggregating, and writing metrics.
+Reads metrics from RabbitMQ servers via the [Management Plugin][management].
 
-Design goals are to have a minimal memory footprint with a plugin system so
-that developers in the community can easily add support for collecting
-metrics.
+For additional details reference the [RabbitMQ Management HTTP Stats][management-reference].
 
-Telegraf is plugin-driven and has the concept of 4 distinct plugin types:
+[management]: https://www.rabbitmq.com/management.html
+[management-reference]: https://raw.githack.com/rabbitmq/rabbitmq-management/rabbitmq_v3_6_9/priv/www/api/index.html
 
-1. [Input Plugins](#input-plugins) collect metrics from the system, services, or 3rd party APIs
-2. [Processor Plugins](#processor-plugins) transform, decorate, and/or filter metrics
-3. [Aggregator Plugins](#aggregator-plugins) create aggregate metrics (e.g. mean, min, max, quantiles, etc.)
-4. [Output Plugins](#output-plugins) write metrics to various destinations
+### Configuration
 
-New plugins are designed to be easy to contribute, pull requests are welcomed
-and we work to incorporate as many pull requests as possible.
+```toml
+[[inputs.rabbitmq]]
+  ## Management Plugin url. (default: http://localhost:15672)
+  # url = "http://localhost:15672"
+  ## Tag added to rabbitmq_overview series; deprecated: use tags
+  # name = "rmq-server-1"
+  ## Credentials
+  # username = "guest"
+  # password = "guest"
 
-## Try in Browser :rocket:
+  ## Optional TLS Config
+  # tls_ca = "/etc/telegraf/ca.pem"
+  # tls_cert = "/etc/telegraf/cert.pem"
+  # tls_key = "/etc/telegraf/key.pem"
+  ## Use TLS but skip chain & host verification
+  # insecure_skip_verify = false
 
-You can try Telegraf right in your browser in the [Telegraf playground](https://rootnroll.com/d/telegraf/).
+  ## Optional request timeouts
+  ##
+  ## ResponseHeaderTimeout, if non-zero, specifies the amount of time to wait
+  ## for a server's response headers after fully writing the request.
+  # header_timeout = "3s"
+  ##
+  ## client_timeout specifies a time limit for requests made by this client.
+  ## Includes connection time, any redirects, and reading the response body.
+  # client_timeout = "4s"
 
-## Contributing
+  ## A list of nodes to gather as the rabbitmq_node measurement. If not
+  ## specified, metrics for all nodes are gathered.
+  # nodes = ["rabbit@node1", "rabbit@node2"]
 
-There are many ways to contribute:
-- Fix and [report bugs](https://github.com/influxdata/telegraf/issues/new)
-- [Improve documentation](https://github.com/influxdata/telegraf/issues?q=is%3Aopen+label%3Adocumentation)
-- [Review code and feature proposals](https://github.com/influxdata/telegraf/pulls)
-- Answer questions and discuss here on github and on the [Community Site](https://community.influxdata.com/)
-- [Contribute plugins](CONTRIBUTING.md)
-- [Contribute external plugins](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/execd/shim) *(experimental)*
+  ## A list of queues to gather as the rabbitmq_queue measurement. If not
+  ## specified, metrics for all queues are gathered.
+  # queues = ["telegraf"]
 
-## Minimum Requirements
+  ## A list of exchanges to gather as the rabbitmq_exchange measurement. If not
+  ## specified, metrics for all exchanges are gathered.
+  # exchanges = ["telegraf"]
 
-Telegraf shares the same [minimum requirements][] as Go:
-- Linux kernel version 2.6.23 or later
-- Windows 7 or later
-- FreeBSD 11.2 or later
-- MacOS 10.11 El Capitan or later
+  ## Queues to include and exclude. Globs accepted.
+  ## Note that an empty array for both will include all queues
+  # queue_name_include = []
+  # queue_name_exclude = []
 
-[minimum requirements]: https://github.com/golang/go/wiki/MinimumRequirements#minimum-requirements
-
-## Installation:
-
-You can download the binaries directly from the [downloads](https://www.influxdata.com/downloads) page
-or from the [releases](https://github.com/influxdata/telegraf/releases) section.
-
-### Ansible Role:
-
-Ansible role: https://github.com/rossmcdonald/telegraf
-
-### From Source:
-
-Telegraf requires Go version 1.13 or newer, the Makefile requires GNU make.
-
-1. [Install Go](https://golang.org/doc/install) >=1.13 (1.15 recommended)
-2. Clone the Telegraf repository:
-   ```
-   cd ~/src
-   git clone https://github.com/influxdata/telegraf.git
-   ```
-3. Run `make` from the source directory
-   ```
-   cd ~/src/telegraf
-   make
-   ```
-
-### Changelog
-
-View the [changelog](/CHANGELOG.md) for the latest updates and changes by
-version.
-
-### Nightly Builds
-
-These builds are generated from the master branch:
-- [telegraf-nightly_darwin_amd64.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_darwin_amd64.tar.gz)
-- [telegraf_nightly_amd64.deb](https://dl.influxdata.com/telegraf/nightlies/telegraf_nightly_amd64.deb)
-- [telegraf_nightly_arm64.deb](https://dl.influxdata.com/telegraf/nightlies/telegraf_nightly_arm64.deb)
-- [telegraf-nightly.arm64.rpm](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly.arm64.rpm)
-- [telegraf_nightly_armel.deb](https://dl.influxdata.com/telegraf/nightlies/telegraf_nightly_armel.deb)
-- [telegraf-nightly.armel.rpm](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly.armel.rpm)
-- [telegraf_nightly_armhf.deb](https://dl.influxdata.com/telegraf/nightlies/telegraf_nightly_armhf.deb)
-- [telegraf-nightly.armv6hl.rpm](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly.armv6hl.rpm)
-- [telegraf-nightly_freebsd_amd64.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_freebsd_amd64.tar.gz)
-- [telegraf-nightly_freebsd_i386.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_freebsd_i386.tar.gz)
-- [telegraf_nightly_i386.deb](https://dl.influxdata.com/telegraf/nightlies/telegraf_nightly_i386.deb)
-- [telegraf-nightly.i386.rpm](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly.i386.rpm)
-- [telegraf-nightly_linux_amd64.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_linux_amd64.tar.gz)
-- [telegraf-nightly_linux_arm64.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_linux_arm64.tar.gz)
-- [telegraf-nightly_linux_armel.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_linux_armel.tar.gz)
-- [telegraf-nightly_linux_armhf.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_linux_armhf.tar.gz)
-- [telegraf-nightly_linux_i386.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_linux_i386.tar.gz)
-- [telegraf-nightly_linux_s390x.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_linux_s390x.tar.gz)
-- [telegraf_nightly_s390x.deb](https://dl.influxdata.com/telegraf/nightlies/telegraf_nightly_s390x.deb)
-- [telegraf-nightly.s390x.rpm](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly.s390x.rpm)
-- [telegraf_nightly_ppc64el.deb](https://dl.influxdata.com/telegraf/nightlies/telegraf_nightly_ppc64el.deb)
-- [telegraf-nightly.ppc64le.rpm](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly.ppc64le.rpm)
-- [telegraf-nightly_windows_amd64.zip](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_windows_amd64.zip)
-- [telegraf-nightly_windows_i386.zip](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly_windows_i386.zip)
-- [telegraf-nightly.x86_64.rpm](https://dl.influxdata.com/telegraf/nightlies/telegraf-nightly.x86_64.rpm)
-- [telegraf-static-nightly_linux_amd64.tar.gz](https://dl.influxdata.com/telegraf/nightlies/telegraf-static-nightly_linux_amd64.tar.gz)
-
-## How to use it:
-
-See usage with:
-
-```
-telegraf --help
+  ## Federation upstreams to include and exclude specified as an array of glob
+  ## pattern strings.  Federation links can also be limited by the queue and
+  ## exchange filters.
+  # federation_upstream_include = []
+  # federation_upstream_exclude = []
 ```
 
-#### Generate a telegraf config file:
+### Metrics
+
+- rabbitmq_overview
+  - tags:
+    - url
+    - name
+  - fields:
+    - channels (int, channels)
+    - connections (int, connections)
+    - consumers (int, consumers)
+    - exchanges (int, exchanges)
+    - messages (int, messages)
+    - messages_acked (int, messages)
+    - messages_delivered (int, messages)
+    - messages_delivered_get (int, messages)
+    - messages_published (int, messages)
+    - messages_ready (int, messages)
+    - messages_unacked (int, messages)
+    - queues (int, queues)
+    - clustering_listeners (int, cluster nodes)
+    - amqp_listeners (int, amqp nodes up)
+    - return_unroutable (int, number of unroutable messages)
+    - return_unroutable_rate (float, number of unroutable messages per second)
+
++ rabbitmq_node
+  - tags:
+    - url
+    - node
+    - url
+  - fields:
+    - disk_free (int, bytes)
+    - disk_free_limit (int, bytes)
+    - disk_free_alarm (int, disk alarm)
+    - fd_total (int, file descriptors)
+    - fd_used (int, file descriptors)
+    - mem_limit (int, bytes)
+    - mem_used (int, bytes)
+    - mem_alarm (int, memory a)
+    - proc_total (int, erlang processes)
+    - proc_used (int, erlang processes)
+    - run_queue (int, erlang processes)
+    - sockets_total (int, sockets)
+    - sockets_used (int, sockets)
+    - running (int, node up)
+    - uptime (int, milliseconds)
+    - mnesia_disk_tx_count (int, number of disk transaction)
+    - mnesia_ram_tx_count (int, number of ram transaction)
+    - mnesia_disk_tx_count_rate (float, number of disk transaction per second)
+    - mnesia_ram_tx_count_rate (float, number of ram transaction per second)
+    - gc_num (int, number of garbage collection)
+    - gc_bytes_reclaimed (int, bytes)
+    - gc_num_rate (float, number of garbage collection per second)
+    - gc_bytes_reclaimed_rate (float, bytes per second)
+    - io_read_avg_time (float, number of read operations)
+    - io_read_avg_time_rate (int, number of read operations per second)
+    - io_read_bytes (int, bytes)
+    - io_read_bytes_rate (float, bytes per second)
+    - io_write_avg_time (int, milliseconds)
+    - io_write_avg_time_rate (float, milliseconds per second)
+    - io_write_bytes (int, bytes)
+    - io_write_bytes_rate (float, bytes per second)
+    - mem_connection_readers (int, bytes)
+    - mem_connection_writers (int, bytes)
+    - mem_connection_channels (int, bytes)
+    - mem_connection_other (int, bytes)
+    - mem_queue_procs (int, bytes)
+    - mem_queue_slave_procs (int, bytes)
+    - mem_plugins (int, bytes)
+    - mem_other_proc (int, bytes)
+    - mem_metrics (int, bytes)
+    - mem_mgmt_db (int, bytes)
+    - mem_mnesia (int, bytes)
+    - mem_other_ets (int, bytes)
+    - mem_binary (int, bytes)
+    - mem_msg_index (int, bytes)
+    - mem_code (int, bytes)
+    - mem_atom (int, bytes)
+    - mem_other_system (int, bytes)
+    - mem_allocated_unused (int, bytes)
+    - mem_reserved_unallocated (int, bytes)
+    - mem_total (int, bytes)
+
+- rabbitmq_queue
+  - tags:
+    - url
+    - queue
+    - vhost
+    - node
+    - durable
+    - auto_delete
+  - fields:
+    - consumer_utilisation (float, percent)
+    - consumers (int, int)
+    - idle_since (string, time - e.g., "2006-01-02 15:04:05")
+    - memory (int, bytes)
+    - message_bytes (int, bytes)
+    - message_bytes_persist (int, bytes)
+    - message_bytes_ram (int, bytes)
+    - message_bytes_ready (int, bytes)
+    - message_bytes_unacked (int, bytes)
+    - messages (int, count)
+    - messages_ack (int, count)
+    - messages_ack_rate (float, messages per second)
+    - messages_deliver (int, count)
+    - messages_deliver_rate (float, messages per second)
+    - messages_deliver_get (int, count)
+    - messages_deliver_get_rate (float, messages per second)
+    - messages_publish (int, count)
+    - messages_publish_rate (float, messages per second)
+    - messages_ready (int, count)
+    - messages_redeliver (int, count)
+    - messages_redeliver_rate (float, messages per second)
+    - messages_unack (int, count)
+    - slave_nodes (int, count)
+    - synchronised_slave_nodes (int, count)
+
++ rabbitmq_exchange
+  - tags:
+    - url
+    - exchange
+    - type
+    - vhost
+    - internal
+    - durable
+    - auto_delete
+  - fields:
+    - messages_publish_in (int, count)
+    - messages_publish_in_rate (int, messages per second)
+    - messages_publish_out (int, count)
+    - messages_publish_out_rate (int, messages per second)
+
+- rabbitmq_federation
+  - tags:
+    - url
+    - vhost
+    - type
+    - upstream
+    - exchange
+    - upstream_exchange
+    - queue
+    - upstream_queue
+  - fields:
+    - acks_uncommitted (int, count)
+    - consumers (int, count)
+    - messages_unacknowledged (int, count)
+    - messages_uncommitted (int, count)
+    - messages_unconfirmed (int, count)
+    - messages_confirm (int, count)
+    - messages_publish (int, count)
+    - messages_return_unroutable (int, count)
+
+### Sample Queries
+
+Message rates for the entire node can be calculated from total message counts. For instance, to get the rate of messages published per minute, use this query:
 
 ```
-telegraf config > telegraf.conf
+SELECT NON_NEGATIVE_DERIVATIVE(LAST("messages_published"), 1m) AS messages_published_rate FROM rabbitmq_overview WHERE time > now() - 10m GROUP BY time(1m)
 ```
 
-#### Generate config with only cpu input & influxdb output plugins defined:
+### Example Output
 
 ```
-telegraf --section-filter agent:inputs:outputs --input-filter cpu --output-filter influxdb config
+rabbitmq_queue,url=http://amqp.example.org:15672,queue=telegraf,vhost=influxdb,node=rabbit@amqp.example.org,durable=true,auto_delete=false,host=amqp.example.org messages_deliver_get=0i,messages_publish=329i,messages_publish_rate=0.2,messages_redeliver_rate=0,message_bytes_ready=0i,message_bytes_unacked=0i,messages_deliver=329i,messages_unack=0i,consumers=1i,idle_since="",messages=0i,messages_deliver_rate=0.2,messages_deliver_get_rate=0.2,messages_redeliver=0i,memory=43032i,message_bytes_ram=0i,messages_ack=329i,messages_ready=0i,messages_ack_rate=0.2,consumer_utilisation=1,message_bytes=0i,message_bytes_persist=0i 1493684035000000000
+rabbitmq_overview,url=http://amqp.example.org:15672,host=amqp.example.org channels=2i,consumers=1i,exchanges=17i,messages_acked=329i,messages=0i,messages_ready=0i,messages_unacked=0i,connections=2i,queues=1i,messages_delivered=329i,messages_published=329i,clustering_listeners=2i,amqp_listeners=1i 1493684035000000000
+rabbitmq_node,url=http://amqp.example.org:15672,node=rabbit@amqp.example.org,host=amqp.example.org fd_total=1024i,fd_used=32i,mem_limit=8363329126i,sockets_total=829i,disk_free=8175935488i,disk_free_limit=50000000i,mem_used=58771080i,proc_total=1048576i,proc_used=267i,run_queue=0i,sockets_used=2i,running=1i 149368403500000000
+rabbitmq_exchange,url=http://amqp.example.org:15672,exchange=telegraf,type=fanout,vhost=influxdb,internal=false,durable=true,auto_delete=false,host=amqp.example.org messages_publish_in=2i,messages_publish_out=1i 149368403500000000
 ```
-
-#### Run a single telegraf collection, outputting metrics to stdout:
-
-```
-telegraf --config telegraf.conf --test
-```
-
-#### Run telegraf with all plugins defined in config file:
-
-```
-telegraf --config telegraf.conf
-```
-
-#### Run telegraf, enabling the cpu & memory input, and influxdb output plugins:
-
-```
-telegraf --config telegraf.conf --input-filter cpu:mem --output-filter influxdb
-```
-
-## Documentation
-
-[Latest Release Documentation][release docs].
-
-For documentation on the latest development code see the [documentation index][devel docs].
-
-[release docs]: https://docs.influxdata.com/telegraf
-[devel docs]: docs
-
-## Input Plugins
-
-* [activemq](./plugins/inputs/activemq)
-* [aerospike](./plugins/inputs/aerospike)
-* [amqp_consumer](./plugins/inputs/amqp_consumer) (rabbitmq)
-* [apache](./plugins/inputs/apache)
-* [apcupsd](./plugins/inputs/apcupsd)
-* [aurora](./plugins/inputs/aurora)
-* [aws cloudwatch](./plugins/inputs/cloudwatch) (Amazon Cloudwatch)
-* [azure_storage_queue](./plugins/inputs/azure_storage_queue)
-* [bcache](./plugins/inputs/bcache)
-* [beanstalkd](./plugins/inputs/beanstalkd)
-* [bind](./plugins/inputs/bind)
-* [bond](./plugins/inputs/bond)
-* [burrow](./plugins/inputs/burrow)
-* [cassandra](./plugins/inputs/cassandra) (deprecated, use [jolokia2](./plugins/inputs/jolokia2))
-* [ceph](./plugins/inputs/ceph)
-* [cgroup](./plugins/inputs/cgroup)
-* [chrony](./plugins/inputs/chrony)
-* [cisco_telemetry_gnmi](./plugins/inputs/cisco_telemetry_gnmi) (deprecated, renamed to [gnmi](/plugins/inputs/gnmi))
-* [cisco_telemetry_mdt](./plugins/inputs/cisco_telemetry_mdt)
-* [clickhouse](./plugins/inputs/clickhouse)
-* [cloud_pubsub](./plugins/inputs/cloud_pubsub) Google Cloud Pub/Sub
-* [cloud_pubsub_push](./plugins/inputs/cloud_pubsub_push) Google Cloud Pub/Sub push endpoint
-* [conntrack](./plugins/inputs/conntrack)
-* [consul](./plugins/inputs/consul)
-* [couchbase](./plugins/inputs/couchbase)
-* [couchdb](./plugins/inputs/couchdb)
-* [cpu](./plugins/inputs/cpu)
-* [DC/OS](./plugins/inputs/dcos)
-* [diskio](./plugins/inputs/diskio)
-* [disk](./plugins/inputs/disk)
-* [disque](./plugins/inputs/disque)
-* [dmcache](./plugins/inputs/dmcache)
-* [dns query time](./plugins/inputs/dns_query)
-* [docker](./plugins/inputs/docker)
-* [docker_log](./plugins/inputs/docker_log)
-* [dovecot](./plugins/inputs/dovecot)
-* [aws ecs](./plugins/inputs/ecs) (Amazon Elastic Container Service, Fargate)
-* [elasticsearch](./plugins/inputs/elasticsearch)
-* [ethtool](./plugins/inputs/ethtool)
-* [eventhub_consumer](./plugins/inputs/eventhub_consumer) (Azure Event Hubs \& Azure IoT Hub)
-* [exec](./plugins/inputs/exec) (generic executable plugin, support JSON, influx, graphite and nagios)
-* [execd](./plugins/inputs/execd) (generic executable "daemon" processes)
-* [fail2ban](./plugins/inputs/fail2ban)
-* [fibaro](./plugins/inputs/fibaro)
-* [file](./plugins/inputs/file)
-* [filestat](./plugins/inputs/filestat)
-* [filecount](./plugins/inputs/filecount)
-* [fireboard](/plugins/inputs/fireboard)
-* [fluentd](./plugins/inputs/fluentd)
-* [github](./plugins/inputs/github)
-* [gnmi](./plugins/inputs/gnmi)
-* [graylog](./plugins/inputs/graylog)
-* [haproxy](./plugins/inputs/haproxy)
-* [hddtemp](./plugins/inputs/hddtemp)
-* [httpjson](./plugins/inputs/httpjson) (generic JSON-emitting http service plugin)
-* [http_listener](./plugins/inputs/influxdb_listener) (deprecated, renamed to [influxdb_listener](/plugins/inputs/influxdb_listener))
-* [http_listener_v2](./plugins/inputs/http_listener_v2)
-* [http](./plugins/inputs/http) (generic HTTP plugin, supports using input data formats)
-* [http_response](./plugins/inputs/http_response)
-* [icinga2](./plugins/inputs/icinga2)
-* [infiniband](./plugins/inputs/infiniband)
-* [influxdb](./plugins/inputs/influxdb)
-* [influxdb_listener](./plugins/inputs/influxdb_listener)
-* [influxdb_v2_listener](./plugins/inputs/influxdb_v2_listener)
-* [intel_powerstat](plugins/inputs/intel_powerstat)
-* [intel_rdt](./plugins/inputs/intel_rdt)
-* [internal](./plugins/inputs/internal)
-* [interrupts](./plugins/inputs/interrupts)
-* [ipmi_sensor](./plugins/inputs/ipmi_sensor)
-* [ipset](./plugins/inputs/ipset)
-* [iptables](./plugins/inputs/iptables)
-* [ipvs](./plugins/inputs/ipvs)
-* [jenkins](./plugins/inputs/jenkins)
-* [jolokia2](./plugins/inputs/jolokia2) (java, cassandra, kafka)
-* [jolokia](./plugins/inputs/jolokia) (deprecated, use [jolokia2](./plugins/inputs/jolokia2))
-* [jti_openconfig_telemetry](./plugins/inputs/jti_openconfig_telemetry)
-* [kafka_consumer](./plugins/inputs/kafka_consumer)
-* [kapacitor](./plugins/inputs/kapacitor)
-* [aws kinesis](./plugins/inputs/kinesis_consumer) (Amazon Kinesis)
-* [kernel](./plugins/inputs/kernel)
-* [kernel_vmstat](./plugins/inputs/kernel_vmstat)
-* [kibana](./plugins/inputs/kibana)
-* [kubernetes](./plugins/inputs/kubernetes)
-* [kube_inventory](./plugins/inputs/kube_inventory)
-* [lanz](./plugins/inputs/lanz)
-* [leofs](./plugins/inputs/leofs)
-* [linux_sysctl_fs](./plugins/inputs/linux_sysctl_fs)
-* [logparser](./plugins/inputs/logparser) (deprecated, use [tail](/plugins/inputs/tail))
-* [logstash](./plugins/inputs/logstash)
-* [lustre2](./plugins/inputs/lustre2)
-* [mailchimp](./plugins/inputs/mailchimp)
-* [marklogic](./plugins/inputs/marklogic)
-* [mcrouter](./plugins/inputs/mcrouter)
-* [memcached](./plugins/inputs/memcached)
-* [mem](./plugins/inputs/mem)
-* [mesos](./plugins/inputs/mesos)
-* [minecraft](./plugins/inputs/minecraft)
-* [modbus](./plugins/inputs/modbus)
-* [mongodb](./plugins/inputs/mongodb)
-* [monit](./plugins/inputs/monit)
-* [mqtt_consumer](./plugins/inputs/mqtt_consumer)
-* [multifile](./plugins/inputs/multifile)
-* [mysql](./plugins/inputs/mysql)
-* [nats_consumer](./plugins/inputs/nats_consumer)
-* [nats](./plugins/inputs/nats)
-* [neptune_apex](./plugins/inputs/neptune_apex)
-* [net](./plugins/inputs/net)
-* [net_response](./plugins/inputs/net_response)
-* [netstat](./plugins/inputs/net)
-* [nginx](./plugins/inputs/nginx)
-* [nginx_plus_api](./plugins/inputs/nginx_plus_api)
-* [nginx_plus](./plugins/inputs/nginx_plus)
-* [nginx_sts](./plugins/inputs/nginx_sts)
-* [nginx_upstream_check](./plugins/inputs/nginx_upstream_check)
-* [nginx_vts](./plugins/inputs/nginx_vts)
-* [nsd](./plugins/inputs/nsd)
-* [nsq_consumer](./plugins/inputs/nsq_consumer)
-* [nsq](./plugins/inputs/nsq)
-* [nstat](./plugins/inputs/nstat)
-* [ntpq](./plugins/inputs/ntpq)
-* [nvidia_smi](./plugins/inputs/nvidia_smi)
-* [opcua](./plugins/inputs/opcua)
-* [openldap](./plugins/inputs/openldap)
-* [openntpd](./plugins/inputs/openntpd)
-* [opensmtpd](./plugins/inputs/opensmtpd)
-* [openweathermap](./plugins/inputs/openweathermap)
-* [pf](./plugins/inputs/pf)
-* [pgbouncer](./plugins/inputs/pgbouncer)
-* [phpfpm](./plugins/inputs/phpfpm)
-* [phusion passenger](./plugins/inputs/passenger)
-* [ping](./plugins/inputs/ping)
-* [postfix](./plugins/inputs/postfix)
-* [postgresql_extensible](./plugins/inputs/postgresql_extensible)
-* [postgresql](./plugins/inputs/postgresql)
-* [powerdns](./plugins/inputs/powerdns)
-* [powerdns_recursor](./plugins/inputs/powerdns_recursor)
-* [processes](./plugins/inputs/processes)
-* [procstat](./plugins/inputs/procstat)
-* [prometheus](./plugins/inputs/prometheus) (can be used for [Caddy server](./plugins/inputs/prometheus/README.md#usage-for-caddy-http-server))
-* [proxmox](./plugins/inputs/proxmox)
-* [puppetagent](./plugins/inputs/puppetagent)
-* [rabbitmq](./plugins/inputs/rabbitmq)
-* [raindrops](./plugins/inputs/raindrops)
-* [ras](./plugins/inputs/ras)
-* [redfish](./plugins/inputs/redfish)
-* [redis](./plugins/inputs/redis)
-* [rethinkdb](./plugins/inputs/rethinkdb)
-* [riak](./plugins/inputs/riak)
-* [salesforce](./plugins/inputs/salesforce)
-* [sensors](./plugins/inputs/sensors)
-* [sflow](./plugins/inputs/sflow)
-* [smart](./plugins/inputs/smart)
-* [snmp_legacy](./plugins/inputs/snmp_legacy)
-* [snmp](./plugins/inputs/snmp)
-* [snmp_trap](./plugins/inputs/snmp_trap)
-* [socket_listener](./plugins/inputs/socket_listener)
-* [solr](./plugins/inputs/solr)
-* [sql server](./plugins/inputs/sqlserver) (microsoft)
-* [stackdriver](./plugins/inputs/stackdriver) (Google Cloud Monitoring)
-* [statsd](./plugins/inputs/statsd)
-* [suricata](./plugins/inputs/suricata)
-* [swap](./plugins/inputs/swap)
-* [synproxy](./plugins/inputs/synproxy)
-* [syslog](./plugins/inputs/syslog)
-* [sysstat](./plugins/inputs/sysstat)
-* [systemd_units](./plugins/inputs/systemd_units)
-* [system](./plugins/inputs/system)
-* [tail](./plugins/inputs/tail)
-* [temp](./plugins/inputs/temp)
-* [tcp_listener](./plugins/inputs/socket_listener)
-* [teamspeak](./plugins/inputs/teamspeak)
-* [tengine](./plugins/inputs/tengine)
-* [tomcat](./plugins/inputs/tomcat)
-* [twemproxy](./plugins/inputs/twemproxy)
-* [udp_listener](./plugins/inputs/socket_listener)
-* [unbound](./plugins/inputs/unbound)
-* [uwsgi](./plugins/inputs/uwsgi)
-* [varnish](./plugins/inputs/varnish)
-* [vsphere](./plugins/inputs/vsphere) VMware vSphere
-* [webhooks](./plugins/inputs/webhooks)
-  * [filestack](./plugins/inputs/webhooks/filestack)
-  * [github](./plugins/inputs/webhooks/github)
-  * [mandrill](./plugins/inputs/webhooks/mandrill)
-  * [papertrail](./plugins/inputs/webhooks/papertrail)
-  * [particle](./plugins/inputs/webhooks/particle)
-  * [rollbar](./plugins/inputs/webhooks/rollbar)
-* [win_eventlog](./plugins/inputs/win_eventlog)
-* [win_perf_counters](./plugins/inputs/win_perf_counters) (windows performance counters)
-* [win_services](./plugins/inputs/win_services)
-* [wireguard](./plugins/inputs/wireguard)
-* [wireless](./plugins/inputs/wireless)
-* [x509_cert](./plugins/inputs/x509_cert)
-* [zfs](./plugins/inputs/zfs)
-* [zipkin](./plugins/inputs/zipkin)
-* [zookeeper](./plugins/inputs/zookeeper)
-
-## Parsers
-
-- [InfluxDB Line Protocol](/plugins/parsers/influx)
-- [Collectd](/plugins/parsers/collectd)
-- [CSV](/plugins/parsers/csv)
-- [Dropwizard](/plugins/parsers/dropwizard)
-- [FormUrlencoded](/plugins/parser/form_urlencoded)
-- [Graphite](/plugins/parsers/graphite)
-- [Grok](/plugins/parsers/grok)
-- [JSON](/plugins/parsers/json)
-- [Logfmt](/plugins/parsers/logfmt)
-- [Nagios](/plugins/parsers/nagios)
-- [Value](/plugins/parsers/value), ie: 45 or "booyah"
-- [Wavefront](/plugins/parsers/wavefront)
-
-## Serializers
-
-- [InfluxDB Line Protocol](/plugins/serializers/influx)
-- [JSON](/plugins/serializers/json)
-- [Graphite](/plugins/serializers/graphite)
-- [ServiceNow](/plugins/serializers/nowmetric)
-- [SplunkMetric](/plugins/serializers/splunkmetric)
-- [Carbon2](/plugins/serializers/carbon2)
-- [Wavefront](/plugins/serializers/wavefront)
-
-## Processor Plugins
-
-* [clone](/plugins/processors/clone)
-* [converter](/plugins/processors/converter)
-* [date](/plugins/processors/date)
-* [dedup](/plugins/processors/dedup)
-* [defaults](/plugins/processors/defaults)
-* [enum](/plugins/processors/enum)
-* [execd](/plugins/processors/execd)
-* [ifname](/plugins/processors/ifname)
-* [filepath](/plugins/processors/filepath)
-* [override](/plugins/processors/override)
-* [parser](/plugins/processors/parser)
-* [pivot](/plugins/processors/pivot)
-* [port_name](/plugins/processors/port_name)
-* [printer](/plugins/processors/printer)
-* [regex](/plugins/processors/regex)
-* [rename](/plugins/processors/rename)
-* [reverse_dns](/plugins/processors/reverse_dns)
-* [s2geo](/plugins/processors/s2geo)
-* [starlark](/plugins/processors/starlark)
-* [strings](/plugins/processors/strings)
-* [tag_limit](/plugins/processors/tag_limit)
-* [template](/plugins/processors/template)
-* [topk](/plugins/processors/topk)
-* [unpivot](/plugins/processors/unpivot)
-
-## Aggregator Plugins
-
-* [basicstats](./plugins/aggregators/basicstats)
-* [final](./plugins/aggregators/final)
-* [histogram](./plugins/aggregators/histogram)
-* [merge](./plugins/aggregators/merge)
-* [minmax](./plugins/aggregators/minmax)
-* [valuecounter](./plugins/aggregators/valuecounter)
-
-## Output Plugins
-
-* [influxdb](./plugins/outputs/influxdb) (InfluxDB 1.x)
-* [influxdb_v2](./plugins/outputs/influxdb_v2) ([InfluxDB 2.x](https://github.com/influxdata/influxdb))
-* [amon](./plugins/outputs/amon)
-* [amqp](./plugins/outputs/amqp) (rabbitmq)
-* [application_insights](./plugins/outputs/application_insights)
-* [aws kinesis](./plugins/outputs/kinesis)
-* [aws cloudwatch](./plugins/outputs/cloudwatch)
-* [azure_monitor](./plugins/outputs/azure_monitor)
-* [cloud_pubsub](./plugins/outputs/cloud_pubsub) Google Cloud Pub/Sub
-* [cratedb](./plugins/outputs/cratedb)
-* [datadog](./plugins/outputs/datadog)
-* [discard](./plugins/outputs/discard)
-* [dynatrace](./plugins/outputs/dynatrace)
-* [elasticsearch](./plugins/outputs/elasticsearch)
-* [exec](./plugins/outputs/exec)
-* [execd](./plugins/outputs/execd)
-* [file](./plugins/outputs/file)
-* [graphite](./plugins/outputs/graphite)
-* [graylog](./plugins/outputs/graylog)
-* [health](./plugins/outputs/health)
-* [http](./plugins/outputs/http)
-* [instrumental](./plugins/outputs/instrumental)
-* [kafka](./plugins/outputs/kafka)
-* [librato](./plugins/outputs/librato)
-* [logz.io](./plugins/outputs/logzio)
-* [mqtt](./plugins/outputs/mqtt)
-* [nats](./plugins/outputs/nats)
-* [newrelic](./plugins/outputs/newrelic)
-* [nsq](./plugins/outputs/nsq)
-* [opentsdb](./plugins/outputs/opentsdb)
-* [prometheus](./plugins/outputs/prometheus_client)
-* [riemann](./plugins/outputs/riemann)
-* [riemann_legacy](./plugins/outputs/riemann_legacy)
-* [socket_writer](./plugins/outputs/socket_writer)
-* [stackdriver](./plugins/outputs/stackdriver) (Google Cloud Monitoring)
-* [syslog](./plugins/outputs/syslog)
-* [tcp](./plugins/outputs/socket_writer)
-* [udp](./plugins/outputs/socket_writer)
-* [warp10](./plugins/outputs/warp10)
-* [wavefront](./plugins/outputs/wavefront)
-* [sumologic](./plugins/outputs/sumologic)
-* [yandex_cloud_monitoring](./plugins/outputs/yandex_cloud_monitoring)
